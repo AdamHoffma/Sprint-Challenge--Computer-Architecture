@@ -21,7 +21,11 @@ class CPU:
             0b01000110: self.pop,
             0b01010000: self.call,
             0b00010001: self.iret,
-            0b10100000: self.add
+            0b10100000: self.add,
+            0b10100111: self.cmp,
+            0b01010100: self.jmp,
+            0b01010101: self.jeq,
+            0b01010110: self.jne
         }
 
     def ram_read(self, address):
@@ -78,6 +82,26 @@ class CPU:
         self.pc = next_address
         return (0, True)
 
+    def jmp(self, operand_a, operand_b):
+        self.pc = self.reg[operand_a]
+        return (0, True)
+
+    def jeq(self, operand_a, operand_b):
+        if self.flag == 0b00000001:
+            self.pc = self.reg[operand_a]
+            return (0, True)
+        return (2, True)
+
+    def cmp(self, operand_a, operand_b):
+        self.alu("CMP", operand_a, operand_b)
+        return (3, True)
+
+    def jne(self, operand_a, operand_b):
+        if self.flag != 0b00000001:
+            self.pc = self.reg[operand_a]
+            return (0, True)
+        return (2, True)
+
     def load(self, program):
         """Load a program into memory."""
 
@@ -107,8 +131,9 @@ class CPU:
                     self.ram_write(int(num, 2), address)
                     address += 1
                 except ValueError:
-                    print("Value Error")
+                    #print("Value Error")
                     pass
+                    
 
 
 
@@ -120,6 +145,14 @@ class CPU:
         #elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] = (self.reg[reg_a] * self.reg[reg_b])
+        elif op == "CMP":
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.flag = 0b00000001
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.flag = 0b00000010
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.flag = 0b00000100
+            
         else:
             raise Exception("Unsupported ALU operation")
 
